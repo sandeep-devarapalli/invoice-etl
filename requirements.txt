@@ -1,0 +1,5 @@
+streamlit
+duckdb
+daft
+requests
+google-generativeai

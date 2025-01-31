@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+  streamlit:
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app:/app
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      - duckdb
+      - daft
+
+  duckdb:
+    build: ./duckdb_service
+    volumes:
+      - ./data:/data
+
+  daft:
+    build: ./daft_service
+    volumes:
+      - ./app:/app
