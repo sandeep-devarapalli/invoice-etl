@@ -1,6 +1,6 @@
 streamlit
 duckdb
-daft
+getdaft
 requests
 google-generativeai
 pandas

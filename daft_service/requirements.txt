@@ -1,2 +1,2 @@
-daft
+getdaft
 google-generativeai

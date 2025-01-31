@@ -1,12 +1,11 @@
-# Use a lightweight Python image
 FROM python:3.12-slim
 
-# Install DuckDB
-RUN pip install duckdb
+WORKDIR /duckdb_service
 
-# Copy the initialization script
-COPY init.sql /init.sql
+COPY requirements.txt .
 
-# Set up the database file
-VOLUME /data
-CMD ["duckdb", "/data/invoices.db", ".read /init.sql"]
+RUN pip install -r requirements.txt
+
+COPY . .
+
+CMD ["python", "duckdb_worker.py"]
