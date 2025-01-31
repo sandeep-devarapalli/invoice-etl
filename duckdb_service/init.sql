@@ -1,3 +1,4 @@
+-- Create the invoices table if it doesn't exist
 CREATE TABLE IF NOT EXISTS invoices (
     invoice_id STRING,
     status STRING,

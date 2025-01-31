@@ -3,3 +3,4 @@ duckdb
 daft
 requests
 google-generativeai
+pandas

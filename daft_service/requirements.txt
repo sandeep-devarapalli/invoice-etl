@@ -1,0 +1,2 @@
+daft
+google-generativeai

@@ -1,23 +1,39 @@
-version: '3.8'
+version: "3.12"
+
 services:
+  # Streamlit Application
   streamlit:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8501:8501"
+      - "8501:8501" # Expose Streamlit on port 8501
     volumes:
-      - ./app:/app
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-    depends_on:
-      - duckdb
-      - daft
-
-  duckdb:
-    build: ./duckdb_service
-    volumes:
+      - ./app:/app # Mount the app folder into the container
       - ./data:/data
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY} # Pass the Gemini API key as an environment variable
+    depends_on:
+      - duckdb # Ensure DuckDB is running before starting Streamlit
+      - daft # Ensure Daft is running before starting Streamlit
 
-  daft:
-    build: ./daft_service
+  # DuckDB Database Service
+  duckdb:
+    build:
+      context: ./duckdb_service
+      dockerfile: Dockerfile
     volumes:
-      - ./app:/app
+      - ./data:/data # Persist DuckDB data in the host's `data/` directory
+    environment:
+      - DUCKDB_PATH=/data/invoices.db # Path to the DuckDB database file
+
+  # Daft ETL Service
+  daft:
+    build:
+      context: ./daft_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./daft_service:/app
+      - ./data:/data
+    depends_on:
+      - duckdb # Ensure DuckDB is running before starting Daft
