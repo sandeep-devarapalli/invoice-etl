@@ -2,6 +2,7 @@ import base64
 from google.generativeai import GenerativeModel
 import json
 import daft
+from daft.datatype import DataType
 
 def extract_data_from_pdf(pdf_file, prompt):
     """
@@ -42,12 +43,23 @@ def run_etl_pipeline(pdf_files, required_columns):
         f"{', '.join(required_columns)}. Ensure the output is structured as a JSON object."
     )
     
+    print(prompt)
+
     # Create Daft DataFrame for parallel processing
     pdf_data = [{"pdf_file": pdf, "required_columns": required_columns} for pdf in pdf_files]
+    print(pdf_data)
+
     df = daft.from_pylist(pdf_data)
+
+    print(df)
+
+
     
-    # Process PDFs in parallel
+    # Process PDFs in parallel with specified return type
     df = df.with_column("extracted_data", 
-        df["pdf_file"].apply(lambda x: extract_data_from_pdf(x, prompt)))
+        df["pdf_file"].apply(
+            lambda x: extract_data_from_pdf(x, prompt),
+            return_dtype=DataType.python()  # Specify return type
+        ))
     
     return df.to_pandas()["extracted_data"].tolist()

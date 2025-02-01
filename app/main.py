@@ -1,4 +1,5 @@
-from daft_service.daft_worker import run_etl_pipeline
+
+from daft_helpers import run_etl_pipeline
 import streamlit as st
 from etl_pipeline import transform_data, load_data_to_duckdb
 
@@ -6,7 +7,7 @@ from etl_pipeline import transform_data, load_data_to_duckdb
 st.title("Invoice Processing App")
 
 # API Key Input
-api_key = st.sidebar.text_input("Enter Gemini Flash 1.5 API Key", type="password")
+api_key = st.sidebar.text_input("Enter Gemini Flash 2.0 API Key", type="password")
 if api_key:
     st.sidebar.success("API Key Saved!")
     import os
@@ -24,6 +25,8 @@ required_columns = [col.strip() for col in required_columns if col.strip()]
 
 # PDF Upload
 uploaded_files = st.file_uploader("Upload Invoice PDFs", type="pdf", accept_multiple_files=True)
+
+print(uploaded_files);
 
 # Run ETL Process Button
 if st.button("Run ETL Process"):

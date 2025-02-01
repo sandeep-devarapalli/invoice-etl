@@ -13,7 +13,6 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY} # Pass the Gemini API key as an environment variable
     depends_on:
       - duckdb # Ensure DuckDB is running before starting Streamlit
-      - daft # Ensure Daft is running before starting Streamlit
 
   # DuckDB Database Service
   duckdb:
@@ -25,13 +24,3 @@ services:
     environment:
       - DUCKDB_PATH=/data/invoices.db # Path to the DuckDB database file
     restart: on-failure
-
-  # Daft ETL Service
-  daft:
-    build:
-      context: ./daft_service
-      dockerfile: Dockerfile
-    volumes:
-      - ./data:/data
-    depends_on:
-      - duckdb # Ensure DuckDB is running before starting Daft
