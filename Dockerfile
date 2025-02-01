@@ -1,25 +1,24 @@
-# Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Install system dependencies (if needed)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file into the container
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
 RUN pip install -r requirements.txt
 
-# Copy the entire project folder into the container
-COPY . .
+# Copy application code
+COPY app/ .
 
-# Expose the port Streamlit runs on
+# Create fresh data directory
+RUN mkdir -p data
+
+# Expose Streamlit port
 EXPOSE 8501
 
-# Command to run the Streamlit app
-CMD ["streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Run Streamlit
+CMD ["streamlit", "run", "--server.address", "0.0.0.0", "--server.port", "8501", "main.py"]

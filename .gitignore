@@ -1,1 +1,61 @@
-*env
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.venv
+*env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Project specific
+data/
+*.db
+logs/
+*.log
+*.pdf
+*.json
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Streamlit
+.streamlit/
+
+# API Keys and Secrets
+*.pem
+*.key
+*.env
+secrets.toml
+
+# Temporary files
+*.bak
+*.tmp

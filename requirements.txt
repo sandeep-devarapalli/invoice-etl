@@ -4,3 +4,4 @@ getdaft
 requests
 google-generativeai
 pandas
+python-dotenv
