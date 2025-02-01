@@ -16,16 +16,26 @@ def process_single_file(pdf_file, pdf_processor, db_helper):
         # Extract data
         extracted_data = pdf_processor.extract_data_from_pdf(pdf_file)
         
-        # Determine status and prepare JSON extract
-        status = "Failed" if "error" in extracted_data else "Completed"
+        # Check if there was an error in extraction
+        if "error" in extracted_data or extracted_data.get("status") == "Failed":
+            status = "Failed"
+            success = False
+        else:
+            status = "Completed"
+            success = True
+            
         json_extract = json.dumps(extracted_data)
         
         # Save to database
-        success = db_helper.load_data(
+        db_success = db_helper.load_data(
             pdf_file.name,
             status,
             json_extract
         )
+        
+        if not db_success:
+            success = False
+            status = "Failed"
         
         return {
             'filename': pdf_file.name,

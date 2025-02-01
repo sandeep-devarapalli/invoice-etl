@@ -54,6 +54,7 @@ docker-compose.override.yml
 *.pem
 *.key
 *.env
+.env
 secrets.toml
 
 # Temporary files
