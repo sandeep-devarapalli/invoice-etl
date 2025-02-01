@@ -44,14 +44,3 @@ def clean_and_parse_json(response_text: str) -> dict:
                 "error": str(e),
                 "raw_text": response_text
             }
-
-def clean_numeric_value(value):
-    """Convert currency string to float."""
-    if isinstance(value, str):
-        # Remove '$' and ',' from currency strings
-        cleaned = value.replace('$', '').replace(',', '')
-        try:
-            return float(cleaned)
-        except ValueError:
-            return 0.0
-    return float(value) if value else 0.0

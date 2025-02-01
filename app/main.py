@@ -4,30 +4,58 @@ import json
 import logging
 from helpers.daft_helper import PDFProcessor
 from helpers.db_helper import DatabaseHelper
-from helpers.etl_pipeline import transform_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def process_single_file(pdf_file, pdf_processor, db_helper):
+    """Process a single PDF file and return the results"""
+    try:
+        logger.info(f"Processing file: {pdf_file.name}")
+        # Extract data
+        extracted_data = pdf_processor.extract_data_from_pdf(pdf_file)
+        
+        # Determine status and prepare JSON extract
+        status = "Failed" if "error" in extracted_data else "Completed"
+        json_extract = json.dumps(extracted_data)
+        
+        # Save to database
+        success = db_helper.load_data(
+            pdf_file.name,
+            status,
+            json_extract
+        )
+        
+        return {
+            'filename': pdf_file.name,
+            'status': status,
+            'success': success,
+            'data': extracted_data
+        }
+        
+    except Exception as e:
+        logger.error(f"Error processing {pdf_file.name}: {str(e)}", exc_info=True)
+        return {
+            'filename': pdf_file.name,
+            'status': 'Failed',
+            'success': False,
+            'data': {'error': str(e)}
+        }
+
 def display_db_contents():
     df = db_helper.get_db_contents()
-    logger.info(f"Final DB contents: {df}")
     if df.empty:
         st.info("No invoices processed yet.")
         return
     
-    # Display the table without the JSON Extract column
-    # df_display = df.drop(columns=['JSON Extract'])
-    df_display = df
     st.dataframe(
-        df_display,
+        df,
         use_container_width=True,
         hide_index=True
     )
     
-    # Add download button
-    csv = df_display.to_csv(index=False).encode('utf-8')
+    csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
         "Download as CSV",
         csv,
@@ -35,6 +63,11 @@ def display_db_contents():
         "text/csv",
         key='download-csv'
     )
+
+# Initialize session state for uploaded files if it doesn't exist
+if 'uploaded_files' not in st.session_state:
+    st.session_state.uploaded_files = []
+
 
 # Initialize helpers
 pdf_processor = PDFProcessor()
@@ -47,68 +80,70 @@ st.title("Invoice Processing App")
 api_key = st.sidebar.text_input("Enter Gemini Flash 2.0 API Key", type="password")
 if api_key:
     st.sidebar.success("API Key Saved!")
-    os.environ["GEMINI_API_KEY"] = api_key
+    pdf_processor.initialize_model(api_key)
 
-# Define Required Columns
-st.subheader("Define Required Columns")
-required_columns = st.text_area(
-    "Enter required columns (comma-separated)",
-    value="Invoice ID, Vendor Information, Total Amount, Tax Details, Line Items"
-).split(",")
-required_columns = [col.strip() for col in required_columns if col.strip()]
-
-# PDF Upload
+# Multiple PDF Upload
 uploaded_files = st.file_uploader("Upload Invoice PDFs", type="pdf", accept_multiple_files=True)
 if uploaded_files:
-    logger.info(f"Files uploaded: {[f.name for f in uploaded_files]}")
-    st.info(f"Successfully uploaded {len(uploaded_files)} files")
+    # Update session state with new files
+    st.session_state.uploaded_files = uploaded_files
+    st.info(f"Files uploaded: {len(uploaded_files)} PDFs")
 
-# Run Process Button
+# Process Button
 if st.button("Process Invoices"):
-    if not uploaded_files:
+    if not st.session_state.uploaded_files:
         st.error("Please upload PDF files first.")
-    elif not required_columns:
-        st.error("Please define at least one required column.")
+    elif not api_key:
+        st.error("Please enter your API key first.")
     else:
-        try:
-            # Check DB status
-            db_status = db_helper.check_db_status()
-            logger.info(f"Database status: {db_status}")
-            st.info(f"Database status: {db_status}")
+        # Create a progress bar
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # Process each file
+        results = []
+        files_to_process = st.session_state.uploaded_files.copy()
+        
+        for idx, pdf_file in enumerate(files_to_process):
+            # Update progress
+            progress = (idx + 1) / len(files_to_process)
+            progress_bar.progress(progress)
+            status_text.text(f"Processing {pdf_file.name}... ({idx + 1}/{len(files_to_process)})")
+            
+            # Process the file
+            result = process_single_file(pdf_file, pdf_processor, db_helper)
+            results.append(result)
+        
+        # Clear progress indicators
+        progress_bar.empty()
+        status_text.empty()
+        
+        # Clear the uploaded files
+        st.session_state.uploaded_files = []
+        
+        # Display results
+        st.success(f"Processed {len(files_to_process)} files")
+        
+        # Create a summary
+        success_count = sum(1 for r in results if r['success'])
+        failed_count = len(results) - success_count
+        
+        st.write(f"Successfully processed: {success_count}")
+        st.write(f"Failed: {failed_count}")
+        
+        # Display detailed results in an expander
+        with st.expander("View Processing Details"):
+            for result in results:
+                status_color = "🟢" if result['status'] == "Completed" else "🔴"
+                st.markdown(f"{status_color} **{result['filename']}** - {result['status']}")
+                if result['status'] == "Failed":
+                    st.error(f"Error: {result['data'].get('error', 'Unknown error')}")
+                else:
+                    st.json(result['data'])
 
-            for pdf_file in uploaded_files:
-                with st.spinner(f'Processing {pdf_file.name}...'):
-                    logger.info(f"Starting processing for {pdf_file.name}")
-                    
-                    # Extract data
-                    extracted_data = pdf_processor.extract_data_from_pdf(
-                        pdf_file, required_columns
-                    )
-                    logger.info(f"Extracted data: {json.dumps(extracted_data, indent=2)}")
-                    st.json(extracted_data)
-                    
-                    # Transform data
-                    transformed_data = transform_data(extracted_data, required_columns)
-                    logger.info(f"Transformed data: {transformed_data}")
-                    
-                    # Load to database
-                    success = db_helper.load_data(transformed_data)
-                    if success:
-                        logger.info(f"Successfully loaded data for {pdf_file.name}")
-                        st.success(f"Successfully processed {pdf_file.name}")
-                    
-            # Show final DB state
-            # Add this after your file upload section
-            st.subheader("Processed Invoices")
-
-            # Add refresh button
-            if st.button("Refresh Data"):
-                display_db_contents()
-            else:
-                display_db_contents()
-                    
-        except Exception as e:
-            logger.error(f"Processing failed: {str(e)}", exc_info=True)
-            st.error(f"Processing failed: {str(e)}")
-
-
+# Display Database Contents
+st.subheader("Processed Invoices")
+if st.button("Refresh Data"):
+    display_db_contents()
+else:
+    display_db_contents()
