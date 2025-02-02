@@ -87,7 +87,9 @@ class DatabaseHelper:
                     timestamp,
                     invoice_file_name,
                     status,
-                    json_extract
+                    json_extract,
+                    ingestion_timestamp,
+                    completed_timestamp
                 FROM invoices
                 ORDER BY timestamp DESC
             """).df()
