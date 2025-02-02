@@ -13,7 +13,6 @@ class DatabaseHelper:
     def initialize_db(self):
         """Initialize the database and create required tables"""
         try:
-            logger.info(f"Initializing database at {self.db_path}")
             conn = duckdb.connect(self.db_path)
             
             # Create sequence for auto-incrementing ID
@@ -21,14 +20,16 @@ class DatabaseHelper:
                 CREATE SEQUENCE IF NOT EXISTS seq_invoice_id START 1
             """)
             
-            # Create invoices table
+            # Create invoices table with updated schema
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS invoices (
                     id INTEGER PRIMARY KEY,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    ingestion_timestamp TIMESTAMP,
                     invoice_file_name VARCHAR NOT NULL,
                     status VARCHAR NOT NULL,
-                    json_extract TEXT
+                    json_extract TEXT,
+                    completed_timestamp TIMESTAMP
                 )
             """)
             
@@ -38,22 +39,44 @@ class DatabaseHelper:
             logger.error(f"Database initialization failed: {str(e)}")
             raise e
 
-    def load_data(self, file_name, status, json_extract):
-        """Load data into DuckDB"""
+    def load_data_batch(self, arrow_table):
+        """Load batch data from Arrow table into DuckDB"""
         try:
-            logger.info(f"Loading data for file: {file_name}")
+            logger.info("Loading batch data")
             conn = duckdb.connect(self.db_path)
+            
+            # Create temporary table from Arrow data
+            conn.execute("CREATE TEMP TABLE IF NOT EXISTS temp_invoices AS SELECT * FROM arrow_table")
+            
+            # Insert data into main table
             conn.execute("""
-                INSERT INTO invoices (id, invoice_file_name, status, json_extract)
-                VALUES (nextval('seq_invoice_id'), ?, ?, ?)
-            """, (file_name, status, json_extract))
+                INSERT INTO invoices (
+                    id,
+                    timestamp,
+                    ingestion_timestamp,
+                    invoice_file_name,
+                    status,
+                    json_extract,
+                    completed_timestamp
+                )
+                SELECT 
+                    nextval('seq_invoice_id'),
+                    CURRENT_TIMESTAMP,
+                    ingestion_timestamp,
+                    invoice_file_name,
+                    status,
+                    json_extract,
+                    completed_timestamp
+                FROM temp_invoices
+            """)
+            
             conn.close()
-            logger.info("Data loaded successfully")
+            logger.info("Batch data loaded successfully")
             return True
         except Exception as e:
-            logger.error(f"Data loading failed: {str(e)}")
+            logger.error(f"Batch data loading failed: {str(e)}")
             return False
-
+        
     def get_db_contents(self):
         """Get current database contents as a pandas DataFrame"""
         try:

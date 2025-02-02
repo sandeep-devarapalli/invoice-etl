@@ -11,7 +11,7 @@ def clean_and_parse_json(response_text: str) -> dict:
     def remove_markdown_blocks(text):
         """Remove markdown code block syntax"""
         return re.sub(r'```json\s*|\s*```', '', text).strip()
-
+    
     def fix_quotes(text):
         """Fix inconsistent quote usage"""
         # First, replace all escaped quotes with a temporary marker
@@ -24,10 +24,15 @@ def clean_and_parse_json(response_text: str) -> dict:
         text = text.replace('!!QUOTE!!', '\\"')
         
         return text
-
+    
     try:
         # Step 1: Try parsing the raw response
-        return json.loads(response_text)
+        cleaned_text = response_text.strip()
+        if not cleaned_text:
+            logger.warning("Empty response received from Gemini API")
+            return {"status": "FAILED", "error": "Empty response"}
+        
+        return json.loads(cleaned_text)
     except json.JSONDecodeError:
         try:
             # Step 2: Remove markdown and fix quotes
@@ -36,9 +41,9 @@ def clean_and_parse_json(response_text: str) -> dict:
             
             logger.debug(f"Cleaned text: {cleaned_text}")
             return json.loads(cleaned_text)
-            
         except json.JSONDecodeError as e:
             # Return a failure object instead of raising an error
+            logger.error(f"JSON parsing failed: {str(e)}")
             return {
                 "status": "FAILED",
                 "error": str(e),
