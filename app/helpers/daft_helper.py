@@ -52,9 +52,16 @@ class PDFProcessor:
                 try:
                     response = model.generate_content([
                         {'mime_type': 'application/pdf', 'data': file_content_base64},
-                        "Extract all relevant information from this invoice document and return it in JSON format. "
-                        "Include any important fields such as invoice number, date, vendor details, line items, "
-                        "amounts, taxes, and any other relevant information found in the document."
+                        
+                        """
+                        
+                        Extract all relevant information from this invoice document and return it in JSON format. 
+                        Include any important fields such as invoice number, date, vendor details, line items, 
+                        amounts, taxes, and any other relevant information found in the document.
+                        Rules: 
+                        1. If the document is not an invoice, return an error message in the response
+                        
+                        """
                     ])
                     # Parse and clean the Gemini response
                     response_dict = clean_and_parse_json(response.text)
