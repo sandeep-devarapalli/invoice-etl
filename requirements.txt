@@ -5,4 +5,3 @@ requests
 google-generativeai
 pandas
 python-dotenv
-pyarrow

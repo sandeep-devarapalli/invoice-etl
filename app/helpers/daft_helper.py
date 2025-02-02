@@ -1,10 +1,8 @@
 import base64
-import json
 import logging
 from utils import clean_and_parse_json
 from datetime import datetime
 from typing import List, Optional
-import pyarrow as pa
 import google.generativeai as genai
 
 import daft

@@ -41,7 +41,9 @@ docker stop $(docker ps -q)
 docker rm $(docker ps -aq)
 
 # Then try running your container again
-docker run -p 8501:8501 -v $(pwd)/data:/app/data invoice-processor
+<!-- docker run -p 8501:8501 -v $(pwd)/data:/app/data invoice-processor (Volume mount to local folder if required) -->
+
+docker run -p 8501:8501 invoice-processor
 
 
 ## DuckDB Schema
