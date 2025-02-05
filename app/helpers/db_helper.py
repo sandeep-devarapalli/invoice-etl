@@ -6,7 +6,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 class DatabaseHelper:
-    def __init__(self, db_path="data/invoices.db"):
+    def __init__(self, db_path="data/pdf_extract.db"):
         self.db_path = db_path
         self.initialize_db()
 
@@ -22,11 +22,11 @@ class DatabaseHelper:
             
             # Create invoices table with updated schema
             conn.execute("""
-                CREATE TABLE IF NOT EXISTS invoices (
+                CREATE TABLE IF NOT EXISTS pdf_to_text_table (
                     id INTEGER PRIMARY KEY,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     ingestion_timestamp TIMESTAMP,
-                    invoice_file_name VARCHAR NOT NULL,
+                    file_name VARCHAR NOT NULL,
                     status VARCHAR NOT NULL,
                     json_extract TEXT,
                     completed_timestamp TIMESTAMP
@@ -50,11 +50,11 @@ class DatabaseHelper:
             
             # Insert data into main table
             conn.execute("""
-                INSERT INTO invoices (
+                INSERT INTO pdf_to_text_table (
                     id,
                     timestamp,
                     ingestion_timestamp,
-                    invoice_file_name,
+                    file_name,
                     status,
                     json_extract,
                     completed_timestamp
@@ -63,7 +63,7 @@ class DatabaseHelper:
                     nextval('seq_invoice_id'),
                     CURRENT_TIMESTAMP,
                     ingestion_timestamp,
-                    invoice_file_name,
+                    file_name,
                     status,
                     json_extract,
                     completed_timestamp
@@ -85,12 +85,12 @@ class DatabaseHelper:
                 SELECT 
                     id,
                     timestamp,
-                    invoice_file_name,
+                    file_name,
                     status,
                     json_extract,
                     ingestion_timestamp,
                     completed_timestamp
-                FROM invoices
+                FROM pdf_to_text_table
                 ORDER BY timestamp DESC
             """).df()
             conn.close()

@@ -42,7 +42,7 @@ class PDFProcessor:
         })
         logger.info("Pipeline initialized with %d files", len(pdf_files))
 
-    def process_pdfs(self):
+    def process_pdfs(self, prompt: str = None):
         """Process PDFs using Daft's parallel processing"""
         if not self.model:
             raise ValueError("Model not initialized. Please provide API key first.")
@@ -53,6 +53,7 @@ class PDFProcessor:
                     response = model.generate_content([
                         {'mime_type': 'application/pdf', 'data': file_content_base64},
                         
+                        prompt or
                         """
                         
                         Extract all relevant information from this invoice document and return it in JSON format. 
@@ -114,7 +115,7 @@ class PDFProcessor:
                 self.pdf_pipeline["metadata"].cast(daft.DataType.string())
             )
             .select(
-                daft.col('filename').alias('invoice_file_name'),
+                daft.col('filename').alias('file_name'),
                 'ingestion_timestamp',
                 'completed_timestamp',
                 daft.col('processing_status').alias('status'),

@@ -49,6 +49,6 @@ docker run -p 8501:8501 invoice-processor
 ## DuckDB Schema
     - id (system_id) - auto increment number
     - timestamp (system_timestamp) - current timestamp
-    - invoice_file_name - filename of the uploaded file being processed
+    - file_name - filename of the uploaded file being processed
     - status (Failed, Completed) - if record is being processed successfully, i.e. json extract is valid can can be inserted into the column. If there is an error, mark it as failed and still insert the other metadata.
     - json_extract - gemini output in json format
